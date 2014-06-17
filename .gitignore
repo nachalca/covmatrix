@@ -1,0 +1,18 @@
+## R files
+*.Rhistory
+.Rproj.user
+.Rdata
+.Rout
+### LaTeX
+*concordance.tex
+.synctex.gz
+.log
+.aux
+.dvi
+.ps
+.bbl
+.blg
+.nav
+.smn
+.out
+.pdf
