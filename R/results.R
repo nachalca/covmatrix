@@ -52,4 +52,9 @@ qplot(data=d,x=sim.s2,shape=factor(sim),geom='density',color=.id, main='posterio
 d <- subset(samples, r==0.99)
 qplot(data=d,x=sim.s2,shape=factor(sim),geom='density',color=.id, main='posterior density for s2 when rho=0.99') +
   facet_grid(facets=s1~s2,scales='free') + theme(legend.position= 'bottom') + scale_x_log10()
+
+sd.s2 <- ddply(samples,.(.id,r,s1,s2,sim), summarise, sd2 =log(sd(sim.s2)) )
+d <- dcast(sd.s2, sim+r+s1+s2 ~ .id)
+qplot(data=d, x=iw2,y=siw, main='are we cheating?')+facet_wrap(s1~s2,scales='free') + geom_abline(1) 
 dev.off()
+
