@@ -29,7 +29,7 @@ source('R/modelcode.R')
 m_iw  <- stan_model(model_code=sim.iw)
 m_siw <- stan_model(model_code=sim.siw)
 m_ss  <- stan_model(model_code=sim.ssig)
-save(m_iw, m_siw, m_ssig, file='data/models_cpp.Rdata')
+#save(m_iw, m_siw, m_ssig, file='data/models_cpp.Rdata')
 
 # functions to run stan model
 runstan.sim <- function(d, it = 1500,ch=3, w=500, prm=NULL,prior=NULL) {
@@ -39,7 +39,7 @@ runstan.sim <- function(d, it = 1500,ch=3, w=500, prm=NULL,prior=NULL) {
   if (prior == 'ss.ig')  mod<- m_ss
   K <- ncol(d[,-c(1:5)])
   
-  if (prior == 'iw2') R <- diag(apply(d[,-c(1:5)],2,sd))
+  if (prior == 'iw2') R <- diag(apply(d[,-c(1:5)],2,var))
   if (prior != 'iw2') R <- diag(rep(1,K))
 
   dat = list(y = d[,-c(1:5)], N = nrow(d), R = R, k=K, mu0 = rep(0,K))
@@ -76,11 +76,10 @@ load('data/simdata.Rdata')
 res_size10d2 <- simula(size=10, data=simdata.2,it=600,w=100)
 save(res_size10d2, file='data/sims_n10_d2.Rdata')
 
-res_size50d2 <- simula(size=50, data=data2)
-save(res_size50d2, file='../data/sims_n50_d2.Rdata')
-
-res_size250d2 <- simula(size=250, data=data2)
-save(res_size250d2, file='../data/sims_n250_d2.Rdata')
+# res_size50d2 <- simula(size=50, data=data2)
+# save(res_size50d2, file='../data/sims_n50_d2.Rdata')
+# res_size250d2 <- simula(size=250, data=data2)
+# save(res_size250d2, file='../data/sims_n250_d2.Rdata')
 
 # ============
 # For testing...
