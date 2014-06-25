@@ -27,7 +27,33 @@ model {
 
 #---------------------
 # Scaled data IW
-# TO DO
+sim.sciw = "
+data {
+  int <lower=0> N;
+int <lower=0> k;  
+matrix[k,k] R;
+vector[k] y[N];
+vector[k] mu0;
+vector[k] samplesd;
+}
+parameters {
+//  vector[k] mu;
+cov_matrix[k] Sigma;
+}
+transformed parameters {
+real s1;
+real s2;
+real rho;
+s1 <- sqrt(Sigma[1,1])*samplesd[1];
+s2 <- sqrt(Sigma[2,2])*samplesd[2];
+rho <- Sigma[1,2]/(s1*s2);
+}
+model {
+//  for ( i in 1:k)  mu[i] ~ normal(0, 100);
+Sigma ~ inv_wishart(k+1, R);
+for (n in 1:N) y[n] ~ multi_normal(mu0, Sigma);
+}
+"
 #---------------------------
 
 # SIW model
