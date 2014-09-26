@@ -1,0 +1,191 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{graphicx, color}
+\graphicspath{{figs/}}
+\usepackage[top=1.5in, bottom=1in, left=1in, right=1in]{geometry}
+
+\parskip         7.2pt   % sets spacing between paragraphs
+\parindent         3mm   % sets leading space for paragraphs
+
+\title{Posterior distribution for correlation coeficient. Bivariate case}
+\begin{document}
+\maketitle
+
+Consider $n$ observations from $Y \sim N_d(0, \Sigma)$ distribution, the likelihood function can be written as follows:  
+  \begin{equation}
+ p(y\vert \mu,\Sigma) \propto |\Sigma|^{-n/2} e^{- \frac{1}{2} \sum_{i=1}^n y_i^{'} \Sigma^{-1} y_i  } = |\Sigma|^{-n/2} e^{- \frac{1}{2}  tr(\Sigma^{-1}S_0)  } 
+ \label{like}
+ \end{equation} 
+where $y_i$ represents the $i$th  observation from the vector $Y$, and $S_0=\sum_{i=1}^n y_i y_i ^{'}$.
+
+Here we simulate 5 bivariate normally distributed data set, from the model 
+\[
+\begin{pmatrix}  Y_1 \\ Y_2 \end{pmatrix} \sim 
+N\left( \begin{pmatrix}  0 \\ 0 \end{pmatrix}, \begin{pmatrix}  \sigma_{1}^2 & \rho\sigma_{1}\sigma_{2} \\ \rho\sigma_{1}\sigma_{2} & \sigma_{2}^2 \end{pmatrix} \right)
+\] 
+with specific values $\sigma_1=\sigma_2 = 0.01$, and $\rho=0$, sample size is $n=10$. 
+
+
+<<pack, echo=FALSE, message=FALSE, warning=FALSE>>=
+library(mvtnorm)
+library(plyr)
+library(ggplot2)
+library(xtable)
+@
+
+<<data, cache=TRUE, message=FALSE,warning=FALSE,echo=FALSE,results='asis'>>=
+# Choose one data set
+load('../data/simdata.Rdata')
+dd <- subset(simdata.2,s1==.01 & s2==.01 & r==0 & ns==10)
+tt <- ddply(dd, .(sim), summarise, pearson = cor(X1, X2))
+xtable(tt)
+@
+
+
+\section{Conjugate prior, $IW(3, I)$ }
+
+Conjugate prior for the covariance matrix in the normal model is the $IW$, also $\Sigma \sim IW(3, I)$ implies $IG$ on the variances and uniform priors con correlation. 
+
+Prior density is $p(\Sigma) \propto  |\Sigma|^{-(\nu+ d +1)/2 } e^{-\frac{1}{2} tr( \Lambda \Sigma^{-1}) }$ and the full conditional for $\Sigma$ is $\Sigma \vert y,\mu \sim IW(n+3, I+S_\mu)$. If $\mu|\Sigma \sim N(\mu_0,\Sigma/\kappa_0)$, then the marginal posterior for $\Sigma$,$\Sigma|y$, has an IW distribution. 
+
+From the posterior of $\Sigma$ it is posible to derive the posterior density of the correlation coefficient (matt pdf).  Specifically when $\Sigma \vert y \sim IW(n+3, I+S_0)$ we have  
+\[ p(\rho\vert y) \propto (1-\rho^2)^{ (n-3) / 2} exp\left[ - \frac{\rho}{1-\rho^2}\sum y_{1i}y_{2i}  \right] \]
+
+<<iw, echo=FALSE>>=
+# Posterior of rho using a IW(d+1, I) as prior
+post_iw <- function(rho,dts, dt) {
+  d <- subset(dt, sim == dts)[,c('X1', 'X2')]
+  n <- dim(d)[1]
+  s <- sum(d[,1]*d[,2])
+  ( (1 - rho^2)^(n/2) )*exp(- (rho*s)/(1-rho^2)) 
+}
+
+vals        <- expand.grid(rho=seq(-.999,.999,,100),dts=1:5)
+post.valsiw <- mdply(vals, post_iw, dt=dd)
+@
+
+\begin{figure}
+<<fig1, echo=FALSE,message=FALSE,dependson='iw'>>=
+qplot(data=post.valsiw,rho,V1, geom='line') + facet_wrap(~dts)
+@
+\caption{$\rho$ posterior density for $IW$ prior}
+\end{figure}
+
+
+\section{$\mbox{SS}\left[ IG(1,1/2), IW(3,I) \right]$ prior}
+
+The prior for covariance matrix is $\Sigma \sim \mbox{SS}\left[ IG(1,1/2), IW(3,I) \right]$, which means that $\sigma_i^2 \stackrel{iid} \sim IG(1,1/2)$ and $R = \Delta Q \Delta$ where $Q\sim IW(3, I )$ and $\Delta$ is a diagonal matrix with $i^{th}$ diagonal element $Q_{ii}^{-1/2}$. This implies that each correlation is uniformly distributed. 
+
+The prior marginals for variances and correlation are identical to the implied by the conjugate model, but here variances and correlations are consider to independent in the prior. 
+
+In the bivariate case there is only one correlation coefficient so we can directly use $\rho \sim unif(-1,1)$. 
+
+\[\begin{array}{ll}
+p(\sigma_1^2, \sigma_1^2, \rho \vert y) & \propto   p(y\vert \mu,\Sigma) \prod_{i} (\sigma_i^2)e^{\frac{-1}{2\sigma_i^2}} \\ 
+  & \propto (\sigma_1^2\sigma_2^2(1-\rho^2))^{\frac{-n}{2}} e^{\frac{-1}{2}\frac{\sigma_2^2\sum y_{1i}^2 + \sigma_1^2\sum y_{2i}^2 - 2\sigma_1\sigma_2\rho\sum y_{1i}y_{2i} }{\sigma_1^2\sigma_2^2(1-\rho^2)} } \prod_{i} (\sigma_i^2)e^{\frac{-1}{2\sigma_i^2}} \\
+  & \propto (
+  (1-\rho^2))^{\frac{-n}{2}} 
+  \sigma_1^{-n/2-2}exp\left[ -\frac{1}{2\sigma_1^2}(1 + \frac{\sum y_{i1}^2}{(1-\rho^2)}) \right] 
+  \sigma_2^{-n/2-2}exp\left[ -\frac{1}{2\sigma_2^2}(1 + \frac{\sum y_{i2}^2}{(1-\rho^2)}) \right] 
+  exp\left[ -\frac{1}{2} \frac{\rho}{1-\rho^2} \frac{\sum y_{1i}y_{2i}}{\sigma_1\sigma_2} \right]
+\end{array}
+\]
+
+<<ss_igiw, dependson='data', cache=TRUE>>=
+dinvgamma_log <- function(x, a=1, b=.5) a*log(b) - lgamma(a) -(a+1)*log(x) - b/x
+
+post_igiw <- function(dts, sig1, sig2, rho, dt) {
+  # prior for variances is IG(1, 1/2)
+  # prior for correlations is Unif(0,1), althogh it came from an IW
+  # likelyhood : N(0, Sigma), where Sigma= D*R*D
+  R <- diag(c(1,1)); R[2,1] <- rho; R[1,2] <- rho
+  D <- diag(c(sig1, sig2))
+  Sigma <- D %*% R %*% D  
+  d <- subset(dt, sim == dts)[, c('X1', 'X2')]
+  like <- sum( dmvnorm(d, sigma=Sigma, log=TRUE) )
+  like + dinvgamma_log(sig1^2) + dinvgamma_log(sig2^2)
+}
+
+
+#post_igiw(sig1=.01, sig2=.01, rho=0, d=dd)
+
+vals <- expand.grid(dts=1:5,sig1=seq(.001, .5, ,20), sig2=seq(.001, .5,,20), rho=seq(-1,1,,30))
+post.vals <- mdply(vals, post_igiw, dt=dd)
+post.vals$jointpost <- with(post.vals, exp(V1))
+
+# get marginals
+post.rhopr <- ddply(post.vals, .(dts,rho), summarise, post.pr = sum(jointpost))
+post.rho <- ddply(post.rhopr, .(dts), transform, post = post.pr/sum(post.pr) )
+
+post.s1pr <- ddply(post.vals, .(dts,sig1), summarise, post.pr = sum(jointpost))
+post.s1 <- ddply(post.s1pr, .(dts), transform, post = post.pr/sum(post.pr) )
+@
+
+\begin{figure}
+<<fig2, echo=FALSE, message=FALSE,dependson='ss_igiw', fig.keep='all'>>=
+qplot(data=post.rho,rho,post, geom='line') + facet_wrap(~dts)
+@
+\caption{$\rho$ psoterior density for $\mbox{SS}\left[ IG, IW \right]$ prior }
+\end{figure}
+
+\begin{figure}
+<<fig3, echo=FALSE, message=FALSE,dependson='ss_igiw', fig.keep='all'>>=
+qplot(data=post.s1,sig1,post, geom='line')  + facet_wrap(~dts)
+@
+\caption{$\sigma_1$ psoterior density for $\mbox{SS}\left[ IG, IW \right]$ prior }
+\end{figure}
+
+\section{$\mbox{SS}\left[ G(3/2,1/2), W(3,I) \right]$ prior}
+
+<<ss_gw, dependson='data', cache=TRUE,echo=FALSE>>=
+post_gw <- function(dts, sig1, sig2, rho, dt) {
+  # prior for variances is Gamma(3/2, 1/2)
+  # prior for correlations is Unif(-1,1), althogh it came from an W(2+1, I)
+  # likelyhood : N(0, Sigma), where Sigma= D*R*D
+  R <- diag(c(1,1)); R[2,1] <- rho; R[1,2] <- rho
+  D <- diag(c(sig1, sig2))
+  Sigma <- D %*% R %*% D  
+  d <- subset(dt, sim == dts)[, c('X1', 'X2')]
+  like <- sum( dmvnorm(d, sigma=Sigma, log=TRUE) )
+  like + sum( dgamma(c(sig1^2,sig2^2),shape=3/2,rate=1/2,log=TRUE) )
+}
+
+
+
+post_gw(dts=1,sig1=.01, sig2=.01, rho=0, d=dd)
+
+vals <- expand.grid(dts=1:5,sig1=seq(.001, .5, ,20), sig2=seq(.001, .5,,20), rho=seq(-1,1,,20))
+post.vals <- mdply(vals, post_gw, dt=dd)
+post.vals$jointpost <- with(post.vals, exp(V1))
+
+# get marginals
+post.rhopr <- ddply(post.vals, .(dts,rho), summarise, post.pr = sum(jointpost))
+post.rho <- ddply(post.rhopr, .(dts), transform, post = post.pr/sum(post.pr) )
+
+post.s1pr <- ddply(post.vals, .(dts,sig1), summarise, post.pr = sum(jointpost))
+post.s1 <- ddply(post.s1pr, .(dts), transform, post = post.pr/sum(post.pr) )
+@
+
+\begin{figure}
+<<fig4, echo=FALSE, message=FALSE,dependson='ss_igiw', fig.keep='all'>>=
+qplot(data=post.rho,rho,post, geom='line') + facet_wrap(~dts)
+@
+\caption{$\rho$ psoterior density for $\mbox{SS}\left[ G(3/2, 1/2), W(3,I) \right]$ prior }
+\end{figure}
+
+\begin{figure}
+<<fig5, echo=FALSE, message=FALSE,dependson='ss_igiw', fig.keep='all'>>=
+qplot(data=post.s1,sig1,post, geom='line')  + facet_wrap(~dts)
+@
+\caption{$\sigma_1$ psoterior density for $\mbox{SS}\left[ G(3/2, 1/2), W(3,I) \right]$ prior }
+\end{figure}
+
+
+\pagebreak
+
+\section{$\Sigma \sim W_2(3, I)$ prior}
+
+
+
+\end{document}
