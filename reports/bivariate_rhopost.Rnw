@@ -132,6 +132,7 @@ library(ggplot2)
 library(xtable)
 library(MCMCpack)
 library(pracma)
+library(LambertW)
 @
 
 <<data, cache=TRUE, message=FALSE,warning=FALSE,echo=FALSE,results='asis',fig.height=3,fig.width=6>>=
@@ -217,9 +218,93 @@ qplot(data=post.valsigiw, x=rho,y=post,geom='line',color=as.factor(sim))+facet_g
 \caption{$\rho$ posterior density for $SS[IG,IW]$ prior}
 \end{figure}
 
+\newpage
+
+\section{ Low Density Region on IG }
+
+One characteristic of the IG density is to have a very low density region for the small values. This produces an overestimation of the variance if the true variance belongs to that low density region. Which is the size of this regioin ? In this section we try to give some answer to this question. 
 
 
+For each $\epsilon > 0$, define $\delta_{\epsilon} \;\;st\;\;f(\delta_{\epsilon}\vert \alpha,\beta) = \epsilon$, which implies to find the inverse function of the inverse-gamma density, to solve the equation 
 
+\[ \frac{\beta^{\alpha}}{\Gamma(\alpha)}x^{-\alpha-1}e^{-\frac{\beta}{x}} = \epsilon \]
+
+In order to solve this equation we use \emph{Lambert $W$ function}. In mathematics, the Lambert $W$ function, is a set of functions, namely the branches of the inverse relation of the function $xe^x$. It can be generalize as the equation solution, 
+
+\[ 
+\begin{array}{l}
+log(A + Bx) + Cx = log(D) \\
+x = \frac{1}{C}W(\frac{CD}{B}e^{\frac{AC}{B}}) - \frac{A}{B}
+\end{array}
+\]
+
+base on this we can find an expresion for $\delta_{\epsilon}$, 
+
+\begin{eqnarray}
+\nonumber \frac{\beta^{\alpha}}{\Gamma(\alpha)}x^{-\alpha-1}e^{-\frac{\beta}{x}} &=& \epsilon \\
+\nonumber x^{-\alpha-1}e^{-\frac{\beta}{x}} &=& \epsilon \frac{\Gamma(\alpha)}{\beta^{\alpha}} \\
+\nonumber u^{\alpha+1}e^{-\beta u} = \epsilon_* & where & \epsilon_*=\epsilon\frac{\Gamma(\alpha)}{\beta^{\alpha}} \;\;, u = 1/x \\
+\nonumber (\alpha+1)log(u) -\beta u &=& log(\epsilon_*) \\
+\nonumber log(u) -\frac{\beta}{\alpha+1} u &=& \frac{log(\epsilon_*)}{\alpha+1} \\
+\nonumber then \;\; u &=& -\frac{\alpha+1}{\beta} W\left(-\frac{\beta}{\alpha+1} \epsilon_*^{\frac{1}{\alpha+1}}\right) 
+\end{eqnarray}
+
+then noting that $u = 1/\delta_{\epsilon}$ we obtain the expresion 
+\begin{equation}
+\delta^{ig}_{\epsilon} = -\frac{\alpha+1}{\beta W\left(-\frac{\beta}{\alpha+1} \epsilon_*^{\frac{1}{\alpha+1}}\right) } 
+\label{deltaIG}
+\end{equation}
+
+We would like to compare $\delta^{ig}_{\epsilon}$ values with the corresponding for other distributions used for variance parameters as $LN(\mu,\sigma)$ or $G(\alpha, \beta)$. With a similar procedure we can obtain a close form for the $Gamma$ density as $\delta^{g}_{\epsilon} = -\frac{\beta W\left(-\frac{\beta}{\alpha-1} \epsilon_*^{\frac{1}{\alpha-1}}\right) }{\alpha-1}$, for the $LN$ there is no close solution (CHECK THIS) but for each $\epsilon$ we can find the corresponding $\delta^{ln}_{\epsilon}$ numerically. 
+
+<<low_fns, echo=FALSE>>=
+# Compute ldr for gamma, inverse-gamma and lognormal densities.
+
+# IG inverse function
+dinvgamma_log <- function(x, a=1, b=.5) a*log(b) - lgamma(a) -(a+1)*log(x) - b/x
+
+ldr_ig <- function(eps, a, b) {
+  arg <- -b*(eps*gamma(a)/(b^a))^(1/(a+1))/(a+1)
+  ww <- W_1(arg) # using one branch, only for x <= mode = b/(a+1)
+  -b/( (a+1)*ww ) 
+}
+
+## G inverse function
+dgamma2 <- function(x, a=1, b=.5) (b^a/gamma(a))* x^(a-1) *exp(-b*x)
+
+ldr_g <- function(eps, a, b) {
+  arg <- -b*(eps*gamma(a)/(b^a))^(1/(a-1))/(a-1)
+  -(a-1)*W(arg)/b 
+}
+
+# LogNormal inverse function, no close form so numerical computed
+ldr_ln <- function(eps,mu,sg) {
+  m <- exp(mu-sg^2)
+  optimize( function(x) abs( dlnorm(x,mu,sg) - eps), c(0,m) )$minimum
+}
+f <- Vectorize(ldr_ln, ,'eps')
+#curve( dlnorm( f(x, 0,1)), from=0, to=.6)
+
+# compare delta values for the 3 densities
+
+compare.delta <- function(a,b,eps) {
+  # a,b are parameters on IG(a,b), eps is the epsilon vlaue
+  # compute parameters for Gamma that match mean and mode (a>1), also for LN
+  mu <- b/(a-1); m <- b/(a+1)
+  a1 <- mu/(mu-m) ; b1 <- 1/(mu-m)  
+  mu1 <- log(m)-2*log(mu/m)/3 ; sg1 <- sqrt(2*log(mu/m)/3)
+  # compute delta values
+  data.frame(dist=c('IG','G','LN'), epsilon=eps, par1=c(a,a1,mu1), par2=c(b,b1,sg1), delta=c(ldr_ig(eps,a,b),ldr_g(eps,a1,b1),ldr_ln(eps,mu1,sg1) ) )
+  }
+#compare.delta(2,2,.01)
+@
+
+\begin{figure}
+<<low_plot, dependson='low_fns',warning=FALSE>>=
+vals <- mdply( expand.grid(a=seq(1.01,10,,20), b=c(.5, 1),eps=c(.001,.01,.1) ), compare.delta)
+qplot(data=vals, a,delta,geom='line', color=dist, facets=b~epsilon) 
+@
+\end{figure}
 
 
 % \section{$\mbox{SS}\left[ IG(1,1/2), IW(3,I) \right]$ prior}
