@@ -1,0 +1,154 @@
+% !TEX encoding = UTF-8 Unicode
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{amsfonts}
+\usepackage{authblk}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black, filecolor=black, urlcolor=black}
+
+% margins
+\usepackage[top=1.5in, bottom=1in, left=1in, right=1in]{geometry}
+\parskip 3mm
+
+%\graphicspath{{figs/}}
+
+% for comments
+\newcommand{\jarad}[1]{\textcolor{Orange}{(jarad: #1)}}
+\newcommand{\nacho}[1]{\textcolor{blue}{(nacho: #1)}}
+\newcommand{\matt}[1]{\textcolor{red}{(matt: #1)}}
+
+% ....
+\newcommand{\I}{\mathrm{I}}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.7}
+
+% for cites
+\bibpunct{(}{)}{;}{a}{}{,} 
+
+%-------------------------------------
+
+\title{Problems of the Inverse Wishart}
+% \author[1]{Ignacio Alvarez }
+% \author[1]{Jarad Niemi }
+% \author[2]{ Matt Simpson}
+% \affil[1]{Department of Statistics, Iowa State University}
+% \affil[2]{Department of Statistics and Department of Economics, Iowa State University}
+
+\date{Unknown (?) }
+
+\begin{document}
+ 
+\maketitle 
+% 
+% 
+% \begin{abstract}
+% IW is conjugate but it has a lot of issues for the covariance inferences. 
+% \end{abstract}
+
+\section{Introduction}
+
+\begin{itemize}
+  \item $\Sigma$ priors comonlly used
+  \item $IW$ problems: lack of flexibility becasuse 1 df parameter, prior dependency among correlation and variances. Also the low density region for inverse-chi2 mention in Gelman. 
+  \item Focus: impact on posterior inferences of these problems, specially the last one. 
+  \item $IW$ ''incidence'': R packages or articles that use this prior. 
+\end{itemize}
+
+The natural conjugate prior for normally distributed data is the Inverse-Wishart distribution. There are two main problems that been pointed out with this prior. First the uncertainty of all the variances is controlled by one single degrees-of-freedom parameter, which may results in lacks of flexibility for the inference (see Sec. 19.2 of \cite{bda2003}). Secondlly, it impose a prior dependence amnog variances and correlations \citep{visualize}.    
+
+\cite{gelman2006prior} shows scaled inv-$\chi^2$ distribution has extremely low density in a region near zero and thus causes bias in the result posteriors for these variances. This issue is extended to the inverse wishart case since the implied distribution on each individual variance is actually inv-$\chi^2$.    
+
+These issues are focus on characteristics of the prior. However, the impact of these characteristics on the posterior distribution and the inference are not studied that much. We show how the inference about individual vairances and correlations is afected when we use $IW$ as a prior. The main impact is due to the low density region of the inv-$\chi^2$ density which may explain bias in the posterior inference for $\Sigma$ when the true variances are low. 
+
+Although all the problems that $IW$ prior has, is still widelly used in aplications. Several R packages has built in functions that uses $IW$ as a prior where the user only may be able to change the hyperparameter values\footnote{packages: {\tt nicheROVER,SharedHT2 (not in cran anymore), Boom, sbgcop, MCMCglmm,BayesComm, MSBVAR,bayesSurv,phcfM, monomvn, miscF, bayesm, spBayes, factorQR, agRee, DPpackage } } (and sometimes not even this). In this sense it would be nice to find some solution to its problems as a prior without designing a new one. 
+%Many multivariate porblems invole the estimation of a covariance matrix. In Bayesian framework, several differents priors has been proposed to make inference about a covariance matrix. Some alternatives are based in decomposing the covariance matrix in smaller components and set priors for each components, for instance \cite{yang1994} and \cite{barnard2000} uses this type of strategy. A different aproach is to build hirerarchiccal model for the covariance matrix entries and yet a third way is to set prior for some transformation the covariance matrix. \cite{daniels1999} and \cite{matilde} are examples of the hirerarchical aproach and \cite{leonard1992} set prior on the presition matrix. Perhaps one of the reasons for having many alternatives ways to set a prior for a covariance matrix is that the usual default options for setting a prior present important drawbacks. The non-informative Jeffrey prior may result on improper posterior when it is used within the context of hirerarchical linear model. 
+
+\section{Statistical model}
+\begin{itemize}
+  \item Describe the likelyhood and the prior
+  \item Obtain posterior for $\Sigma$, $\sigma_i^2$ and $\rho_{ij}$
+  \item Study LDR on IG density (via inverse function or cdf)
+  \item study hypergeometric function (appears on $\rho$ posterior)
+  \item Show posterior bias when vairance is low (simulations ?).  Relate the bias with characteristic in the prior, lwd and hypergeometric function. 
+\end{itemize}
+
+Consider the multivariate normal model, that is let $Y_i\in \mathbb{R}^d$ for $i=1,\ldots,n$ and assume $Y_i \stackrel{iid}{\sim} N(\mu, \Sigma)$ with $\mu\in \mathbb{R}^d$ and $\Sigma$ is a $d$-dimensional positive definite matrix.   
+  \begin{equation}
+ p(y\vert \mu,\Sigma) \propto |\Sigma|^{-n/2} \mbox{exp}\left\{- \frac{1}{2} \sum_{i=1}^n (y_i-\mu)^\top \Sigma^{-1} (y_i-\mu) \right\} = |\Sigma|^{-n/2}  \mbox{exp}\left\{- \frac{1}{2}  \mbox{tr}(\Sigma^{-1}S_\mu)  \right\} 
+ \label{like}
+ \end{equation}
+The likelihood is provided in equation \eqref{like} where $y$ represents the entire data and  $S_\mu = \sum_{i=1}^n (y_i-\mu) (y_i-\mu) ^\top$. Which can be decompose as $S_{\mu} = A + M =\sum_{i=1}^n(y_i-\bar y)(y_i-\bar y) ^{'} + n(\bar y-\mu)(\bar y-\mu) ^\top$.  
+
+\subsection{Posterior density}
+The primary parameter of interest is the matrix $\Sigma$ with elements $\Sigma_{ij}$. We will often refer to the standard deviations $\sigma_i$ and correlations $\rho_{ij}$ where $\sigma_i^2 = \Sigma_{ii}$ and $\Sigma_{ij} = \rho_{ij}\sigma_i\sigma_j$. 
+
+To complete model we set uniform prior for $\mu$, $p(\mu)\propto 1$ and inverse wishart prior on $\Sigma\sim IW(\nu,\Lambda)$, i.e. $p(\Sigma) \propto |\Sigma|^{-(\frac{\nu +d+1}{2})} e^{-\frac{1}{2}tr(\Lambda\Sigma^{-1})}$. Posterior distribution for $\Sigma$ is derived as follows, 
+\begin{equation}
+\begin{array}{ll}
+ p(\Sigma\vert y) & \propto  \int p(\Sigma, \mu \vert y) d\mu  \\
+                  & \propto p(\Sigma) \int |\Sigma|^{-n/2}e^{-\frac{1}{2}tr(\Sigma^{-1}(A+M))}d\mu  \\
+                  & \propto p(\Sigma) |\Sigma|^{-n/2}e^{-\frac{1}{2}tr(\Sigma^{-1}A)} \int e^{-\frac{1}{2}tr(\Sigma^{-1}M)} d\mu  \\
+                  & \propto p(\Sigma) |\Sigma|^{(-n/2 + 1/2)}e^{-\frac{1}{2}tr(\Sigma^{-1}A)} \\
+                  & \propto |\Sigma|^{-(\frac{\nu+d+n}{2})} e^{-\frac{1}{2}tr(\Sigma^{-1}(A+\Lambda)}
+ \end{array}
+ \label{muint}
+ \end{equation} 
+implying that $\Sigma\vert y \sim IW(n+\nu-1, A+\Lambda)$ as expected. 
+
+The posterior ditribution for individual vairances is directlly obtained from $IW$ properties as a scaled inverse chi-square distribution\footnote{The scaled inverse chi-square denoted by $X \sim \mbox{inv-}\chi^2(\nu, s^2)$ has a density function given by $p(x) =  \frac{(\nu/2)^{\nu/2}} {\Gamma(\nu/2)} s^{\nu}x^{-(\nu/2 + 1)} \mbox{exp}\left\{-\nu s^2 / 2x\right\} $} for each variance $\sigma_i^2\sim \mbox{inv-}\chi^2(\nu - d + 1, \frac{\lambda_{ii}}{\nu-d+1} )$ where $\lambda_{ii}$ is the $i^{th}$ diagonal entry of $\Lambda$.
+
+Another $IW$ property is that any submatrix is also distributed as $IW$, this fact can be used to obtain the posterior distribution of the correlation coeficient. In particular taking the first submatrix of dimension $d=2$ and letting $\tilde A = A + \Lambda$  we have 
+
+\[
+p(\sigma_1^2,\sigma_2^2,\sigma_{12}) \propto (\sigma_1^2\sigma_2^2 -\sigma_{12}^2)^{-\frac{n+2}{2}}exp\left [-\frac{1}{2(\sigma_1^2\sigma_2^2 -\sigma_{12}^2)}   (\tilde a_{11}\sigma_2^2 - 2\tilde a_{12}\sigma_{12} + \tilde a_{22}\sigma_1^2 \right] 
+\]
+where $a_{kj}=\sum_{i=1}^n(y_{ik}-\bar y_k)(y_{ij}-\bar y_j)$ and $\tilde a_{ij} = a_{ij}+\lambda_{ij}$. 
+
+Then we follow the derivations in \cite{box1973bayesian} to obtain the posterior density of the correlation when a Jefrey prior is consider. They used a transformation proposed by Fisher to obtain the sampling distribution of the pearson correlation coeficient. Let $r=a_{12}/\sqrt{a_{11}a{22}}$ and $r=\tilde a_{12}/\sqrt{\tilde  a_{11}\tilde  a{22}}$
+\[
+\begin{array}{llll}
+x = (\frac{\sigma_1\sigma_2}{\tilde a_{11}\tilde a_{22}})^{1/2} & w = (\frac{\sigma_1 \tilde a_{22}}{\tilde a_{11}\sigma_2})^{1/2} & \rho = \frac{\sigma_{12}}{\sigma_1\sigma_2}  & J = \frac{2x^2(\tilde a_{11}\tilde a_{22})^{3/2}}{w}
+\end{array}
+\]
+
+\[
+\begin{array}{ll}
+p(x,w,\rho) & \propto (x^2(1-\rho^2))^{-\frac{n+2}{2}}\frac{x^2}{w}exp\left [-\frac{1}{2x(1-\rho^2)} (w^{-1} - 2\tilde r\rho w) \right] \\
+p(w,\rho) & \propto \frac{(1-\rho^2)^{-\frac{n+2}{2}}}{w} \int x^{-n}exp\left [-\frac{1}{2x(1-\rho^2)} (w^{-1} - 2\tilde r\rho w) \right] dx \\
+p(w,\rho) & \propto \frac{(1-\rho^2)^{-\frac{n+2}{2}}}{w} (1-\rho^2)^{n-1} (w^{-1} - 2\tilde r\rho w)^{-(n-1)} \\
+\end{array}
+\]
+Finnally, 
+\begin{equation}
+p(\rho\vert y)  \propto (1-\rho^2)^{\frac{n+\nu}{2} -2} \int_0^\infty w^{-1} (w^{-1} - 2\tilde r \rho + w)^{-(n+\nu-1)}dw
+\label{rhopost.iw}
+\end{equation}
+
+\subsection{useful matemathical functions} 
+lambert W and hypergeometric F ...
+
+\subsection{Understanding the inference bias}
+show why posterior is biased when true variance is low...
+
+
+
+\section{Solutions ...}
+\begin{itemize}
+  \item uses small values for diagonal elements in the prior, instead of $I$ matrix.
+  \item use sample vairance on the pior matrix. 
+\end{itemize}
+
+
+
+\bibliographystyle{asa}      
+\bibliography{bayes}      
+
+\end{document}

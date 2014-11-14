@@ -133,6 +133,7 @@ library(xtable)
 library(MCMCpack)
 library(pracma)
 library(LambertW)
+library(actuar)
 @
 
 <<data, cache=TRUE, message=FALSE,warning=FALSE,echo=FALSE,results='asis',fig.height=3,fig.width=6>>=
@@ -293,6 +294,7 @@ compare.delta <- function(a,b,eps) {
   mu <- b/(a-1); m <- b/(a+1)
   a1 <- mu/(mu-m) ; b1 <- 1/(mu-m)  
   mu1 <- log(m)-2*log(mu/m)/3 ; sg1 <- sqrt(2*log(mu/m)/3)
+  
   # compute delta values
   data.frame(dist=c('IG','G','LN'), epsilon=eps, par1=c(a,a1,mu1), par2=c(b,b1,sg1), delta=c(ldr_ig(eps,a,b),ldr_g(eps,a1,b1),ldr_ln(eps,mu1,sg1) ) )
   }
@@ -305,6 +307,44 @@ vals <- mdply( expand.grid(a=seq(1.01,10,,20), b=c(.5, 1),eps=c(.001,.01,.1) ), 
 qplot(data=vals, a,delta,geom='line', color=dist, facets=b~epsilon) 
 @
 \end{figure}
+
+
+\subsection{Using CDF}
+
+<<delta_cdf,eval=FALSE>>=
+
+compare.delta2 <- function(a,b,eps) {
+  # a,b are parameters on IG(a,b), eps is the epsilon vlaue
+  # compute parameters for Gamma that match mean and variance (a>1), also for LN
+  m <- b/(a-1); v <- b^2/((a-2)*(a-1)^2)
+  a1 <- m^2/v ; b1 <- m/v  
+  mu1 <- (log(m)-2*log(1+ m/(2*v)))/2 ; sg1 <- sqrt( log(1+ m/(2*v))  )
+  # compute delta values
+  data.frame(dist=c('IG','G','LN'), epsilon=eps, par1=c(a,a1,mu1), par2=c(b,b1,sg1), 
+             delta=c(qinvgamma(eps,a,b),qgamma(eps,a1,b1),qlnorm(eps,mu1,sg1) ) )
+  }
+
+vals2 <- mdply( expand.grid(a=seq(1.01,10,,25), b=c(2,1),eps=c(0.01,.05,.1) ), compare.delta2)
+qplot(data=vals2,a,delta,geom='line', color=dist, facets=b~eps) 
+
+qplot(data=vals2,par1,delta,geom='line', color=as.factor(b) )+ facet_wrap(dist~eps, scale='free')
+
+
+# quantile function plot
+curve( pinvgamma(x, shape=1.01,rate=2) , from=0,to=.1)
+, ylim=c(0,.2))
+
+curve( pgamma(x, shape=1.01,rate=.96), from=0,to=10,add=TRUE,col=2)
+
+curve( plnorm(x,meanlog=0) , from=0,to=.1, add=TRUE,col=4)
+
+
+
+@
+
+
+
+
 
 
 % \section{$\mbox{SS}\left[ IG(1,1/2), IW(3,I) \right]$ prior}
