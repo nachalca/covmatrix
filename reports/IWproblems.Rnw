@@ -47,13 +47,16 @@
 \begin{document}
  
 \maketitle 
+ 
+\begin{abstract}
+Covariance matrix estimation arises in multivariate problems including multivariate normal sampling models and regression models where random effects are jointly modeled, e.g. random-intercept, random-slope models. A Bayesian analysis of these problems requires a prior on the covariance matrix, the inverse Wishart prior is conditionally conjugate prior in the normal model and the most frequently used in practice. It is knonw this piror have important problems, however the impact of these issues on posterior inference remians somewhat not understood. Here we evaluate posterior inference of a covariance matrix when inverse wishart prior is used, in the context of several statistical models. We do this through a simulation study and application to a real data set. The main issue on the posterior inference appears when the true variance is small relative to prior mean. In this case, the posterior for the variance is biased toward larger values and the correlation is biased toward zero. This bias persists even for large sample sizes and therefore caution should be used when using the inverse Wishart prior.
+\end{abstract}
+
+
 
 \tableofcontents
-% 
-% 
-% \begin{abstract}
-% IW is conjugate but it has a lot of issues for the covariance inferences. 
-% \end{abstract}
+\newpage
+
 
 \section{Introduction}
 
@@ -75,28 +78,100 @@ Although all the problems that $IW$ prior has, is still widelly used in aplicati
 
 \section{Inverse Wishart}
 
-Properties of the inverse Wishart
+A simetric, positive defnite random $d\times d$ matrix $\Sigma$ with elements $\sigma_{ij}$ has an Inverse Wishart distribution ($IW$) when its distribution is 
+\begin{equation}
+p(\Sigma) \propto |\Sigma|^{-(\frac{\nu +d+1}{2})} e^{-\frac{1}{2}tr(\Lambda\Sigma^{-1})}
+\label{IW}
+\end{equation}
 
-lambert W and hypergeometric F ...
+where $\Lambda$ is a positive definite $d$ dimensional matrix and $\nu$ is a scalar degrees of freedom parameter satisfying $\nu>d-1$, we denote this distribution by $\Sigma \sim IW(\nu, \Lambda)$. Moments :
+\[\begin{array}{lcl}
+E(\Sigma) & = &  \Sigma_0= \frac{\Lambda}{\nu - d - 1}$ for $\nu>d+1. \\
+Cov(\sigma_{ij}, \sigma_{kl}) &=& ... \\
+E(\Sigma A \Sigma) &=& ... \\
+E(tr(A\Sigma)\Sigma) &=& ... \\
+E(tr(A\Sigma)tr(B\Sigma) &=& ... \\
+\end{array}
+\]
+
 
 \subsection{Inverse Gamma}
+The special case $d=1$ \eqref{IW} is reduced to $\sigma^{-(\frac{\nu+2}{2})} e^{-\frac{\lambda}{2\sigma^2}}$ which means $\sigma^2 \sim \mbox{inv-}\chi^2(\nu/2, \lambda/\nu)$ an scaled inverse chi-square \footnote{The scaled inverse chi-square denoted by $X \sim \mbox{inv-}\chi^2(\nu, s^2)$ has a density function given by $p(x) =  \frac{(\nu/2)^{\nu/2}} {\Gamma(\nu/2)} s^{\nu}x^{-(\nu/2 + 1)} \mbox{exp}\left\{-\nu s^2 / 2x\right\} $} or inverse gamma distribution. 
 
-d=1 case
+\subsection{Marginals}
+The matrix $\Sigma$ will be considered as a covariance matrix for some random vector. We refer to the standard deviations $\sigma_i$ and correlations $\rho_{ij}$ where $\sigma_i^2=\sigma_{ii}$ and $\sigma_{ij} = \rho_{ij}\sigma_i\sigma_j$. 
+
+Lets consider the matrices $\Sigma_{11}\; \Sigma_{12}\; \Sigma_{22}$ with dimensions $d_1\times d_1$, $d_1\times d_2$,$d_2\times d_2$ respectively forming a  partition of the $\Sigma$ matrix 
+
+\[ \Sigma = 
+\begin{bmatrix}
+\Sigma_{11} & \Sigma_{12} \\ 
+\Sigma_{21} & \Sigma_{22}
+\end{bmatrix}
+\]
+and let further define $\Sigma_{22.1} = \Sigma_{22}-\Sigma_{21}\Sigma_{11}^{-1}\Sigma_{12}$ and $ T = \Sigma_{11}^{-1}\Sigma_{12}$, then \cite{box1973bayesian} show that: 
+
+\begin{equation}
+\begin{array}{ll}
+\Sigma_{11} \sim &  IW(\nu, \Lambda_{11}) \\
+\Sigma_{22.1} \sim &  IW(\nu+d_1, \Lambda_{22.1}) \\
+T \sim &  t_{d_1 d_2}(\hat T,\Lambda_{11}^{-1},\nu+d_1,\Lambda_{22.1}) ????? 
+\end{array}
+\label{IWmargin}
+\end{equation}
+
+Ditribution for individual vairances is directlly obtained from \eqref{IWmargin}. Seting $d_1=1$ we obtain the distribution for $\sigma_1^2$ and this can be extendend to any variance, specifically for each variance $\sigma_i^2\sim \mbox{inv-}\chi^2(\nu - d + 1, \frac{\lambda_{ii}}{\nu-d+1} )$ where $\lambda_{ii}$ is the $i^{th}$ diagonal entry of $\Lambda$.
+
+Asuming $\Lambda$ matrix is diagonal with elements $\lambda_i$ it is posible obtain the distribution for the corresponding correlation matrix. Let $\Sigma = S R S$, where $S$ is a diagonal matrix with standard deviations, $s_i=\sqrt{\sigma_{ii}}$ and R a matrix with the correlations, then we can derive 
+\[f(R) \propto |R|^{-(\frac{\nu +d+1}{2})} \left(\prod_i r^{ii}\lambda_i \right)^{\nu/2} \]
+
+and further assuming $\Lambda=I$ we can show each correlation is distributed as Beta on $(-1,1)$ \citep{barnard2000}.
+
+With a general definite positive matrix $\Lambda$  we can use that any submatrix is also distributed as $IW$, equation \eqref{IWmargin}. This fact can be used to obtain the posterior distribution of the correlation coeficient. In particular, taking the first submatrix of dimension $d=2$ we have 
+\[
+p(\sigma_1^2,\sigma_2^2,\sigma_{12}) \propto (\sigma_1^2\sigma_2^2 -\sigma_{12}^2)^{-\frac{\nu+d+1}2}exp\left [-\frac{1}{2(\sigma_1^2\sigma_2^2 -\sigma_{12}^2)}   (\lambda_{11}\sigma_2^2 - 2\lambda_{12}\sigma_{12} + \lambda\sigma_1^2 \right] 
+\]
+Then, following \cite{box1973bayesian}\footnote{Actually they used a transformation proposed by Fisher to obtain the sampling distribution of the pearson correlation coeficient.} we consider $r_0=\lambda_{12}/\sqrt{\lambda_{11}\lambda{22}}$, and the transformation 
+\[
+\begin{array}{llll}
+x = (\frac{\sigma_i\sigma_j}{\lambda_{ii}\lambda_{jj}})^{1/2} & 
+w = (\frac{\sigma_i \lambda_{jj}}{\lambda_{ii}\sigma_j})^{1/2} & 
+\rho_{ij} = \frac{\sigma_{ij}}{\sigma_i\sigma_j}  & J = \frac{2x^2(\lambda_{ii}\lambda_{jj})^{3/2}}{w}
+\end{array}
+\]
+
+% \[
+% \begin{array}{ll}
+% p(x,w,\rho) & \propto (x^2(1-\rho^2))^{-\frac{n+2}{2}}\frac{x^2}{w}exp\left [-\frac{1}{2x(1-\rho^2)} (w^{-1} - 2\tilde r\rho w) \right] \\
+% p(w,\rho) & \propto \frac{(1-\rho^2)^{-\frac{n+2}{2}}}{w} \int x^{-n}exp\left [-\frac{1}{2x(1-\rho^2)} (w^{-1} - 2\tilde r\rho w) \right] dx \\
+% p(w,\rho) & \propto \frac{(1-\rho^2)^{-\frac{n+2}{2}}}{w} (1-\rho^2)^{n-1} (w^{-1} - 2\tilde r\rho w)^{-(n-1)} \\
+% \end{array}
+% \]
+
+to obtain the marginal distribution of the correlation coeficient
+\begin{equation}
+p(\rho_{ij})  \propto (1-\rho_{ij}^2)^{\frac{\nu+d+1}{2} -3} \int_0^\infty w^{-1} (w^{-1} - 2r_0 \rho_{ij} + w)^{-(\nu+d-2)}dw
+\label{rho.iw}
+\end{equation}
 
 \subsection{Wishart}
+The inverse of an $IW$ distributed matrix has a Wishart distribution. When $\Sigma\sim IW(\nu,\Lambda)$ then $\Sigma^{-1}\sim W(\nu-d-1,\Lambda^{-1})$
+
+\subsection{Barlet decomposition (choleski?)}
+
+If $\Sigma\sim IW(\nu,I)$ and $\Sigma^{-1} = BB^{\top}$ with $B=(b_{ij}$ lower tirangular matrix then $t_{ij} \stackrel{ind} \sim \chi^2_{d-i+1}$ independent. 
 
 \section{Applications to Bayesian analysis}
-\begin{itemize}
-  \item Describe the likelyhood and the prior
-  \item Obtain posterior for $\Sigma$, $\sigma_i^2$ and $\rho_{ij}$
-  \item Study LDR on IG density (via inverse function or cdf)
-  \item study hypergeometric function (appears on $\rho$ posterior)
-  \item Show posterior bias when vairance is low (simulations ?).  Relate the bias with characteristic in the prior, lwd and hypergeometric function. 
-\end{itemize}
 
 \subsection{Models where covariance matrices are estimated}
 
 \subsubsection{Multivariate normal model}
+Consider the multivariate normal model, that is let $Y_i\in \mathbb{R}^d$ for $i=1,\ldots,n$ and assume $Y_i \stackrel{iid}{\sim} N(\mu, \Sigma)$ with $\mu\in \mathbb{R}^d$ and $\Sigma$ is a $d$-dimensional positive definite matrix.   
+  \begin{equation}
+ p(y\vert \mu,\Sigma) \propto |\Sigma|^{-n/2} \mbox{exp}\left\{- \frac{1}{2} \sum_{i=1}^n (y_i-\mu)^\top \Sigma^{-1} (y_i-\mu) \right\} = |\Sigma|^{-n/2}  \mbox{exp}\left\{- \frac{1}{2}  \mbox{tr}(\Sigma^{-1}S_\mu)  \right\} 
+ \label{like}
+ \end{equation}
+The likelihood is provided in equation \eqref{like} where $y$ represents the entire data and  $S_\mu = \sum_{i=1}^n (y_i-\mu) (y_i-\mu) ^\top$. Which can be decompose as $S_{\mu} = A + M =\sum_{i=1}^n(y_i-\bar y)(y_i-\bar y) ^{'} + n(\bar y-\mu)(\bar y-\mu) ^\top$.  
 
 \subsubsection{Hierarchical random effects model}
 
@@ -106,25 +181,8 @@ d=1 case
 
 \subsection{Priors for covariance matrices}
 
-Can use IW but there are others...
-
-\subsubsection{Scaled inverse Wishart}
-\subsubsection{Hierarchical inverse Wishart}
-\subsubsection{Separation strategy}
-\subsubsection{Others?}
-
-
-Consider the multivariate normal model, that is let $Y_i\in \mathbb{R}^d$ for $i=1,\ldots,n$ and assume $Y_i \stackrel{iid}{\sim} N(\mu, \Sigma)$ with $\mu\in \mathbb{R}^d$ and $\Sigma$ is a $d$-dimensional positive definite matrix.   
-  \begin{equation}
- p(y\vert \mu,\Sigma) \propto |\Sigma|^{-n/2} \mbox{exp}\left\{- \frac{1}{2} \sum_{i=1}^n (y_i-\mu)^\top \Sigma^{-1} (y_i-\mu) \right\} = |\Sigma|^{-n/2}  \mbox{exp}\left\{- \frac{1}{2}  \mbox{tr}(\Sigma^{-1}S_\mu)  \right\} 
- \label{like}
- \end{equation}
-The likelihood is provided in equation \eqref{like} where $y$ represents the entire data and  $S_\mu = \sum_{i=1}^n (y_i-\mu) (y_i-\mu) ^\top$. Which can be decompose as $S_{\mu} = A + M =\sum_{i=1}^n(y_i-\bar y)(y_i-\bar y) ^{'} + n(\bar y-\mu)(\bar y-\mu) ^\top$.  
-
-\subsubsection{Posterior density}
-The primary parameter of interest is the matrix $\Sigma$ with elements $\Sigma_{ij}$. We will often refer to the standard deviations $\sigma_i$ and correlations $\rho_{ij}$ where $\sigma_i^2 = \Sigma_{ii}$ and $\Sigma_{ij} = \rho_{ij}\sigma_i\sigma_j$. 
-
-To complete model we set uniform prior for $\mu$, $p(\mu)\propto 1$ and inverse wishart prior on $\Sigma\sim IW(\nu,\Lambda)$, i.e. $p(\Sigma) \propto |\Sigma|^{-(\frac{\nu +d+1}{2})} e^{-\frac{1}{2}tr(\Lambda\Sigma^{-1})}$. Posterior distribution for $\Sigma$ is derived as follows, 
+We start by studing setting the inverse withart distribution as prior for $\Sigma$, this will be conjugate in the multivariate normal model. 
+To complete model we set uniform prior for $\mu$, $p(\mu)\propto 1$. Posterior distribution for $\Sigma$ is derived as follows, 
 \begin{equation}
 \begin{array}{ll}
  p(\Sigma\vert y) & \propto  \int p(\Sigma, \mu \vert y) d\mu  \\
@@ -137,35 +195,62 @@ To complete model we set uniform prior for $\mu$, $p(\mu)\propto 1$ and inverse 
  \end{equation} 
 implying that $\Sigma\vert y \sim IW(n+\nu-1, A+\Lambda)$ as expected. 
 
-The posterior ditribution for individual vairances is directlly obtained from $IW$ properties as a scaled inverse chi-square distribution\footnote{The scaled inverse chi-square denoted by $X \sim \mbox{inv-}\chi^2(\nu, s^2)$ has a density function given by $p(x) =  \frac{(\nu/2)^{\nu/2}} {\Gamma(\nu/2)} s^{\nu}x^{-(\nu/2 + 1)} \mbox{exp}\left\{-\nu s^2 / 2x\right\} $} for each variance $\sigma_i^2\sim \mbox{inv-}\chi^2(\nu - d + 1, \frac{\lambda_{ii}}{\nu-d+1} )$ where $\lambda_{ii}$ is the $i^{th}$ diagonal entry of $\Lambda$.
-
-Another $IW$ property is that any submatrix is also distributed as $IW$, this fact can be used to obtain the posterior distribution of the correlation coeficient. In particular taking the first submatrix of dimension $d=2$ and letting $\tilde A = A + \Lambda$  we have 
-
-\[
-p(\sigma_1^2,\sigma_2^2,\sigma_{12}) \propto (\sigma_1^2\sigma_2^2 -\sigma_{12}^2)^{-\frac{n+2}{2}}exp\left [-\frac{1}{2(\sigma_1^2\sigma_2^2 -\sigma_{12}^2)}   (\tilde a_{11}\sigma_2^2 - 2\tilde a_{12}\sigma_{12} + \tilde a_{22}\sigma_1^2 \right] 
-\]
-where $a_{kj}=\sum_{i=1}^n(y_{ik}-\bar y_k)(y_{ij}-\bar y_j)$ and $\tilde a_{ij} = a_{ij}+\lambda_{ij}$. 
-
-Then we follow the derivations in \cite{box1973bayesian} to obtain the posterior density of the correlation when a Jefrey prior is consider. They used a transformation proposed by Fisher to obtain the sampling distribution of the pearson correlation coeficient. Let $r=a_{12}/\sqrt{a_{11}a{22}}$ and $r=\tilde a_{12}/\sqrt{\tilde  a_{11}\tilde  a{22}}$
-\[
-\begin{array}{llll}
-x = (\frac{\sigma_1\sigma_2}{\tilde a_{11}\tilde a_{22}})^{1/2} & w = (\frac{\sigma_1 \tilde a_{22}}{\tilde a_{11}\sigma_2})^{1/2} & \rho = \frac{\sigma_{12}}{\sigma_1\sigma_2}  & J = \frac{2x^2(\tilde a_{11}\tilde a_{22})^{3/2}}{w}
-\end{array}
-\]
-
-\[
-\begin{array}{ll}
-p(x,w,\rho) & \propto (x^2(1-\rho^2))^{-\frac{n+2}{2}}\frac{x^2}{w}exp\left [-\frac{1}{2x(1-\rho^2)} (w^{-1} - 2\tilde r\rho w) \right] \\
-p(w,\rho) & \propto \frac{(1-\rho^2)^{-\frac{n+2}{2}}}{w} \int x^{-n}exp\left [-\frac{1}{2x(1-\rho^2)} (w^{-1} - 2\tilde r\rho w) \right] dx \\
-p(w,\rho) & \propto \frac{(1-\rho^2)^{-\frac{n+2}{2}}}{w} (1-\rho^2)^{n-1} (w^{-1} - 2\tilde r\rho w)^{-(n-1)} \\
-\end{array}
-\]
-Finnally, 
+Now appling $IW$ properties we mentioned previuoslly we can obtain posterior distributions for marginal variances and correlations. Individual vairances are distributed as scaled inverse chi-square distribution $\sigma_i^2\sim \mbox{inv-}\chi^2(\nu - d + 1, \frac{\lambda_{ii}}{\nu-d+1} )$ where $\lambda_{ii}$ is the $i^{th}$ diagonal entry of $\Lambda$. For the correlation, once again we consider the first submatrix of dimension $d=2$ and letting $\tilde A = A + \Lambda$  we have 
+% \[
+% p(\sigma_1^2,\sigma_2^2,\sigma_{12}) \propto (\sigma_1^2\sigma_2^2 -\sigma_{12}^2)^{-\frac{n+2}{2}} exp\left [-\frac{1}{2(\sigma_1^2\sigma_2^2 -\sigma_{12}^2)}   (\tilde a_{11}\sigma_2^2 - 2\tilde a_{12}\sigma_{12} + \tilde a_{22}\sigma_1^2 \right] 
+% \] 
+% where $a_{kj}=\sum_{i=1}^n(y_{ik}-\bar y_k)(y_{ij}-\bar y_j)$ and $\tilde a_{ij} = a_{ij}+\lambda_{ij}$. 
+% Then we follow the derivations in \cite{box1973bayesian} to obtain the posterior density of the correlation when a Jefrey prior is consider. They used a transformation proposed by Fisher to obtain the sampling distribution of the pearson correlation coeficient. Let $r=a_{12}/\sqrt{a_{11}a{22}}$ and $r=\tilde a_{12}/\sqrt{\tilde  a_{11}\tilde  a{22}}$
+% \[
+% \begin{array}{llll}
+% x = (\frac{\sigma_1\sigma_2}{\tilde a_{11}\tilde a_{22}})^{1/2} & w = (\frac{\sigma_1 \tilde a_{22}}{\tilde a_{11}\sigma_2})^{1/2} & \rho = \frac{\sigma_{12}}{\sigma_1\sigma_2}  & J = \frac{2x^2(\tilde a_{11}\tilde a_{22})^{3/2}}{w}
+% \end{array}
+% \]
+% \[
+% \begin{array}{ll}
+% p(x,w,\rho) & \propto (x^2(1-\rho^2))^{-\frac{n+2}{2}}\frac{x^2}{w}exp\left [-\frac{1}{2x(1-\rho^2)} (w^{-1} - 2\tilde r\rho w) \right] \\
+% p(w,\rho) & \propto \frac{(1-\rho^2)^{-\frac{n+2}{2}}}{w} \int x^{-n}exp\left [-\frac{1}{2x(1-\rho^2)} (w^{-1} - 2\tilde r\rho w) \right] dx \\
+% p(w,\rho) & \propto \frac{(1-\rho^2)^{-\frac{n+2}{2}}}{w} (1-\rho^2)^{n-1} (w^{-1} - 2\tilde r\rho w)^{-(n-1)} \\
+% \end{array}
+% \]
+% Finnally, 
 \begin{equation}
 p(\rho\vert y)  \propto (1-\rho^2)^{\frac{n+\nu}{2} -2} \int_0^\infty w^{-1} (w^{-1} - 2\tilde r \rho + w)^{-(n+\nu-1)}dw
 \label{rhopost.iw}
 \end{equation}
 
+wehre $r=\tilde a_{12}/\sqrt{\tilde  a_{11}\tilde  a{22}}$
+
+\subsubsection{Jefrey Prior}
+
+A non informative prior for the covariance matrix is $p(\Sigma)\propto |\Sigma|^{-(\frac{d+1}{2})}$. 
+
+In the multivariate normal model contex, posterior inference about covariance matrix based on Jefrey prior can be easily obtain as  $p(\Sigma\vert y) \propto |\Sigma|^{-(\frac{d+n}{2})} e^{-\frac{1}{2}tr(\Sigma^{-1}A)}$ implying that $\Sigma\vert y \sim IW(n-1, A)$. 
+
+Box-Tiao finds the posterior distribution for $\rho$ using a transformation proposed by Fisher to obtain the sampling distribution of the pearson correlation coeficient, $r=a_{12}/\sqrt{a_{11}a{22}}$
+\begin{equation}
+p(\rho\vert y)  \propto (1-\rho^2)^{n/2 -2} \int_0^\infty w^{-1} (w^{-1} - 2r\rho + w)^{-(n-1)}dw
+\label{rhopost.jef}
+\end{equation}
+
+This has nice properties in the multivariate normal model contex. However \cite{berger2005posterior} shows it may result on improper posterior when it is used in hierarchical linear models.
+
+
+\subsubsection{Scaled inverse Wishart}
+
+An alternative to the IW prior is the scaled inverse Wishart (SIW) prior which is based on the inverse Wishart distribution but adds additional parameters for flexibility \citep{odomain}. The SIW prior defines $\Sigma \equiv \Delta Q \Delta $ where $\Delta$ is a diagonal matrix with $\Delta_{ii}=\delta_i$, then 
+
+\begin{equation}
+Q \sim  IW(\nu, \Lambda) \;\;, \;\; \log(\delta_i) \stackrel{ind} \sim N(b_i, \xi_i^2)
+\label{eq:siw}
+\end{equation} 
+
+We use the notation $\Sigma \sim SIW(\nu, \Lambda, b, \xi)$ to refer to this prior.  By construction, the SIW prior implies that $\sigma_i = \delta_i \sqrt{Q_{ii}}$, and $\Sigma_{ij}=\delta_i\delta_jQ_{ij}$. Thus each standard deviation is the product of a log-normal and the square root of a scaled inv-$\chi^2$ and the correlations $\rho_{ij} = Q_{ij}/\sqrt{Q_{ii}Q_{jj}}$ have the same distribution they had under the inverse Wishart on $Q$.  
+
+
+\subsubsection{Hierarchical inverse Wishart}
+\subsubsection{Separation strategy}
+\subsubsection{Others?}
 
 
 \section{Solutions ...}

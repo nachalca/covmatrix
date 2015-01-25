@@ -311,7 +311,7 @@ qplot(data=vals, a,delta,geom='line', color=dist, facets=b~epsilon)
 
 \subsection{Using CDF}
 
-<<delta_cdf,eval=FALSE>>=
+<<delta_cdf,eval=FALSE,echo=FALSE>>=
 
 compare.delta2 <- function(a,b,eps) {
   # a,b are parameters on IG(a,b), eps is the epsilon vlaue
